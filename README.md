@@ -1,4 +1,4 @@
 shingles
 ========
 
-Realizationf of shingles algorithm
+Реализация алгоритма шинглов для поиска неточных совпадений документов
