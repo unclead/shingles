@@ -10,7 +10,9 @@ require_once 'Helper.php';
 
 class SearchEngine
 {
-    const HASH_DEVIDER = 25;
+    const HASH_DIVIDER = 25;
+
+    const DATA_LIMIT = 5000;
 
     private $search_text = null;
 
@@ -22,7 +24,11 @@ class SearchEngine
 
     private $shingle_length = 10;
 
-    private $useDevider = false;
+    private $use_divider = false;
+
+    private $percent = 0;
+
+    private $duplicates = 0;
 
     public function __construct(DataSourceInterface $dataSource, $options = array())
     {
@@ -130,7 +136,7 @@ class SearchEngine
      */
     public function run($returnAjax = false)
     {
-        ini_set('max_execution_time', 300);
+        ini_set('max_execution_time', 600);
 
         if (empty($this->search_text)) {
             throw new Exception('Analyzed text can not be empty');
@@ -141,12 +147,51 @@ class SearchEngine
 
         $shingles = $this->populateShingles($search_text);
 
-        $data = $this->dataSource->getData(true);
-        $count = count($data);
+        $total_count = $this->dataSource->getCount();
 
-        $percent = 0;
-        $duplicates = 0;
+        $processed_count = 0;
 
+        // В случае, если размер выборки больше допустимого предела
+        // используем цикл со смещением, чтобы избежать проблемм с переполнением памяти
+        if($total_count > self::DATA_LIMIT) {
+
+            $offset = 0;
+            $this->dataSource->setCount(self::DATA_LIMIT);
+
+            while($offset < $total_count) {
+                $this->dataSource->setOffset($offset);
+                $data = $this->dataSource->getData(true);
+
+                $this->compareData($shingles, $data);
+
+                $processed_count += count($data);
+                $offset += self::DATA_LIMIT;
+            }
+        } else {
+            $data = $this->dataSource->getData(true);
+            $processed_count += count($data);
+            $this->compareData($shingles, $data);
+        }
+
+
+
+        $this->percent = round($this->percent / $processed_count, 2);
+
+        $result = array(
+            'percent'       => $this->percent,
+            'duplicates'    => $this->duplicates,
+            'time'          => Helper::timer(true)
+        );
+
+        return $returnAjax ? json_encode($result) : $result;
+    }
+
+    /**
+     * Сравниваем пачку данных с исходным текстом
+     * @param $shingles
+     * @param $data
+     */
+    private function compareData($shingles, $data) {
         foreach ($data as $text) {
             $source_text = $this->canonizeText($text);
             $source_shingles = $this->populateShingles($source_text);
@@ -156,22 +201,12 @@ class SearchEngine
 
             $diff = round((count($intersect) / count($merge)) / 0.01, 2);
 
-            $percent += $diff;
+            $this->percent += $diff;
 
             if ($diff == 100) {
-                $duplicates++;
+                $this->duplicates++;
             }
         }
-
-        $percent = round($percent / $count, 2);
-
-        $result = array(
-            'percent'       => $percent,
-            'duplicates'    => $duplicates,
-            'time'          => Helper::timer(true)
-        );
-
-        return $returnAjax ? json_encode($result) : $result;
     }
 
     /**
@@ -295,8 +330,14 @@ class SearchEngine
             $shingles[] = $shingle;
 
             $hash = crc32($shingle);
-            if($this->useDevider) {
-                if($hash % self::HASH_DEVIDER == 0) {
+
+            /**
+             * При обработке больших текстов можно для сравнения использовать
+             * лишь те шинглы, хэш которых кратен делителю от 10 до 40
+             *
+             */
+            if($this->use_divider) {
+                if($hash % self::HASH_DIVIDER == 0) {
                     $shingles_hash[] = $hash;
                 }          
             } else {

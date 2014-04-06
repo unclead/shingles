@@ -71,6 +71,12 @@ class ApiDataSource implements DataSourceInterface
         return $this->offset;
     }
 
+    /**
+     * Получение данных для проверки с внешнего исчтоника
+     * @param bool $use_api
+     * @return array|mixed
+     * @todo В случае, если размер выборки более 10000 следует использовать цикл со смещением иначе получаем ошибку переполнения памяти
+     */
     public function getData($use_api = false)
     {
         if($use_api) {

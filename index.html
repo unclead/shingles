@@ -64,6 +64,8 @@
                     <div class="bar" style="width: 100%"></div>
                 </div>
 
+                <div id="error" class="alert alert-danger" style="display: none;"></div>
+
                 <div id="result" style="display: none;">
                     <p>Количество дублей (совпадение 100%): <span id="duplicates"></span></p>
                     <p>Процент схожести: <span id="percent"></span></p>
@@ -121,6 +123,7 @@
                 type: 'POST',
                 dataType: 'json',
                 beforeSend: function() {
+                    $('#error').hide();
                     $('#progress-bar').show();
                 },
                 success: function(data) {
@@ -129,9 +132,11 @@
                     $('#percent').text(data.percent);
                     $('#time').text(data.time);
                     $('#result').show();
+
                 },
                 error: function(){
-
+                    $('#progress-bar').hide();
+                    $('#error').text('Ошибка!').show();
                 }
             });
         }

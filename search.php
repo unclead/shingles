@@ -23,12 +23,11 @@ if (isset($_POST)) {
     $limit = !empty($_POST['limit']) ? $_POST['limit'] : 100;
 
     // защита от "дурака"
-    if($limit > 10000) {
-        $limit = 10000;
+    if($limit > 100000) {
+        $limit = 100000;
     }
 
     $dataSource = new ApiDataSource();
-
 
     $dataSource->setUrl($url);
     $dataSource->setCount($limit);
