@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Поиск нечетких дубликатов</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+	<!-- Le styles -->
+	<link href="assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+	<style>
+		body {
+			padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+		}
+	</style>
+	<link href="assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="navbar navbar-inverse navbar-fixed-top">
+	<div class="navbar-inner">
+		<div class="container"><!-- --></div>
+	</div>
+</div>
+
+<div class="container">
+	<form id="search-form" action="./search.php" method="POST" class="form-horizontal" onsubmit="//return false;">
+        <div class="control-group">
+            <label class="control-label" for="url">API URL</label>
+            <div class="controls">
+                <input type="text" name="url" id="url" class="input-xlarge" />
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label" for="limit">Размер выборки</label>
+            <div class="controls">
+                <input type="text" name="limit" id="limit" class="input-xlarge" />
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label" for="token">Ваш токен</label>
+            <div class="controls">
+                <input type="text" name="token" id="token" class="input-xxlarge" />
+            </div>
+        </div>
+        <div class="control-group">
+			<label class="control-label" for="search_text">Текст для проверки</label>
+			<div class="controls">
+				<textarea name="search_text" id="search_text" style="width: 800px; height: 275px;"></textarea>
+			</div>
+		</div>
+		<div class="control-group">
+			<div class="controls">
+                <!--<button type="submit">Check</button>-->
+				<a href="#" id="process-btn" class="btn btn-primary">Проверить</a>
+			</div>
+		</div>
+
+        <div class="control-group">
+            <div class="controls" style="width: 815px;">
+                <div id="progress-bar" class="progress progress-warning progress-striped" style="display: none;">
+                    <div class="bar" style="width: 100%"></div>
+                </div>
+
+                <div id="result" style="display: none;">
+                    <p>Количество дублей (совпадение 100%): <span id="duplicates"></span></p>
+                    <p>Процент схожести: <span id="percent"></span></p>
+                    </p>Затраченное время: <span id="time"></span></p>
+                </div>
+            </div>
+        </div>
+
+	</form>
+
+</div>
+<!-- /container -->
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+<script type="text/javascript">
+    $('#process-btn').click(function(e){
+        e.preventDefault();
+
+        $('#result').hide();
+
+        var eles = ['url', 'token', 'search_text'],
+            i = null,
+            ele = null,
+            is_valid = true;
+
+        for(i in eles) {
+            ele = $('#' + eles[i]);
+            if($(ele).val() == '') {
+                $(ele).closest('.control-group').addClass('error');
+                is_valid = false;
+            } else {
+                $(ele).closest('.control-group').removeClass('error');
+            }
+        }
+
+        if(is_valid) {
+            $.ajax({
+                url: $('#search-form').attr('action'),
+                data: {
+                    url: $('#url').val(),
+                    token: $('#token').val(),
+                    limit: $('#limit').val(),
+                    search_text: $('#search_text').val()
+                },
+                type: 'POST',
+                dataType: 'json',
+                beforeSend: function() {
+                    $('#progress-bar').show();
+                },
+                success: function(data) {
+                    $('#progress-bar').hide();
+                    $('#duplicates').text(data.duplicates);
+                    $('#percent').text(data.percent);
+                    $('#time').text(data.time);
+                    $('#result').show();
+                },
+                error: function(){
+
+                }
+            });
+        }
+    });
+
+</script>
+
+</body>
+</html>
