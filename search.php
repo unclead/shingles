@@ -22,6 +22,11 @@ if (isset($_POST)) {
     $token = strip_tags($_POST['token']);
     $limit = !empty($_POST['limit']) ? $_POST['limit'] : 100;
 
+    // защита от "дурака"
+    if($limit > 10000) {
+        $limit = 10000;
+    }
+
     $dataSource = new ApiDataSource();
 
 

@@ -100,6 +100,15 @@
             }
         }
 
+        ele = $('#limit');
+
+        if(!/^\d*$/.test($(ele).val())) {
+            $(ele).closest('.control-group').addClass('error');
+            is_valid = false;
+        } else {
+            $(ele).closest('.control-group').removeClass('error');
+        }
+
         if(is_valid) {
             $.ajax({
                 url: $('#search-form').attr('action'),
